@@ -864,70 +864,79 @@ function Window:newTab(name)
     local Tab = {}
     Tab.__index = Tab
     
-    function Tab:newGroup(groupName, right)
-        if type(groupName) == "table" then
-            groupName = "Group"
-        end
-        groupName = groupName or ""
-        right = right or false
-        
-        local groups = right and self.rightGroups or self.leftGroups
-        local containers = right and self.rightContainers or self.leftContainers
-        
-        if not groups or not containers then
-            return nil
-        end
-        
-        local frame = Instance.new("Frame")
-        frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-        frame.BorderSizePixel = 1
-        frame.BorderColor3 = Color3.fromRGB(30, 30, 30)
-        frame.Size = UDim2.new(1, 0, 0, 0)
-        frame.Position = UDim2.new(0, 0, 0, 0)
-        frame.Parent = containers
-        frame.AutomaticSize = Enum.AutomaticSize.XY
-        frame.ClipsDescendants = true
-        frame.ZIndex = 11
-        table.insert(self.parent.objects, frame)
-        
-        table.insert(groups, frame)
-        
-        local titleLabel = Instance.new("TextLabel")
-        titleLabel.BackgroundTransparency = 1
-        titleLabel.Size = UDim2.new(1, 0, 0, 18)
-        titleLabel.Position = UDim2.new(0, 0, 0, 0)
-        titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-        titleLabel.TextSize = 12
-        titleLabel.Text = groupName
-        titleLabel.Font = Enum.Font.GothamSemibold
-        titleLabel.Parent = frame
-        titleLabel.ZIndex = 12
-        table.insert(self.parent.objects, titleLabel)
-        
-        local container = Instance.new("Frame")
-        container.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-        container.BorderSizePixel = 0
-        container.Size = UDim2.new(1, 0, 0, 0)
-        container.Position = UDim2.new(0, 0, 0, 18)
-        container.Parent = frame
-        container.AutomaticSize = Enum.AutomaticSize.XY
-        container.ClipsDescendants = true
-        container.ZIndex = 12
-        table.insert(self.parent.objects, container)
-        
-        table.insert(containers, container)
-        
-        local layout = Instance.new("UIListLayout")
-        layout.FillDirection = Enum.FillDirection.Vertical
-        layout.HorizontalAlignment = Enum.HorizontalAlignment.Left
-        layout.SortOrder = Enum.SortOrder.LayoutOrder
-        layout.VerticalAlignment = Enum.VerticalAlignment.Top
-        layout.Padding = UDim.new(0, 4)
-        layout.Parent = container
-        table.insert(self.parent.objects, layout)
-        
-        local Group = {}
-        Group.__index = Group
+function Tab:newGroup(groupName, right)
+    if type(groupName) == "table" then
+        groupName = "Group"
+    end
+    groupName = groupName or ""
+    right = right or false
+    
+    -- Fix: Properly reference the containers
+    local groups = right and self.rightGroups or self.leftGroups
+    local containers = right and self.rightContainers or self.leftContainers
+    
+    -- Ensure containers is an array and has a valid parent
+    if not groups or not containers or #containers == 0 then
+        return nil
+    end
+    
+    -- Get the correct parent container (the scrolling frame)
+    local parentContainer = containers[#containers]
+    if not parentContainer or typeof(parentContainer) ~= "Instance" then
+        return nil
+    end
+    
+    local frame = Instance.new("Frame")
+    frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+    frame.BorderSizePixel = 1
+    frame.BorderColor3 = Color3.fromRGB(30, 30, 30)
+    frame.Size = UDim2.new(1, 0, 0, 0)
+    frame.Position = UDim2.new(0, 0, 0, 0)
+    frame.Parent = parentContainer  -- Fix: Use the instance, not the table
+    frame.AutomaticSize = Enum.AutomaticSize.XY
+    frame.ClipsDescendants = true
+    frame.ZIndex = 11
+    table.insert(self.parent.objects, frame)
+    
+    table.insert(groups, frame)
+    
+    local titleLabel = Instance.new("TextLabel")
+    titleLabel.BackgroundTransparency = 1
+    titleLabel.Size = UDim2.new(1, 0, 0, 18)
+    titleLabel.Position = UDim2.new(0, 0, 0, 0)
+    titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    titleLabel.TextSize = 12
+    titleLabel.Text = groupName
+    titleLabel.Font = Enum.Font.GothamSemibold
+    titleLabel.Parent = frame
+    titleLabel.ZIndex = 12
+    table.insert(self.parent.objects, titleLabel)
+    
+    local container = Instance.new("Frame")
+    container.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+    container.BorderSizePixel = 0
+    container.Size = UDim2.new(1, 0, 0, 0)
+    container.Position = UDim2.new(0, 0, 0, 18)
+    container.Parent = frame
+    container.AutomaticSize = Enum.AutomaticSize.XY
+    container.ClipsDescendants = true
+    container.ZIndex = 12
+    table.insert(self.parent.objects, container)
+    
+    -- Fix: Add container to the correct array
+    table.insert(containers, container)
+    
+    local layout = Instance.new("UIListLayout")
+    layout.FillDirection = Enum.FillDirection.Vertical
+    layout.HorizontalAlignment = Enum.HorizontalAlignment.Left
+    layout.SortOrder = Enum.SortOrder.LayoutOrder
+    layout.VerticalAlignment = Enum.VerticalAlignment.Top
+    layout.Padding = UDim.new(0, 4)
+    layout.Parent = container
+    table.insert(self.parent.objects, layout)
+    
+    local Group = {}
+    Group.__index = Group
         
         function Group:newCheckbox(flag, options)
             options = options or {}
