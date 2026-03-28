@@ -54,22 +54,6 @@ local function isPC()
             return false
         end
     end
-    
-    -- Additional protections
-    if getgenv and getgenv().EMX_LOADED then
-        plr:Kick("Already loaded")
-        return false
-    end
-    
-    if shared and shared.EMX then
-        plr:Kick("Already loaded (shared)")
-        return false
-    end
-    
-    getgenv().EMX_LOADED = true
-    shared.EMX = true
-    
-    return true
 end
 
 if not isPC() then
