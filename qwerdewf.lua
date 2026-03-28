@@ -1847,59 +1847,98 @@ function Library:new_window(title, position, size)
     return Window.new(title, position, size)
 end
 
-function Library:apply_settings(tab)
-    local menuGroup = tab:newGroup("Menu", false)
-    local configGroup = tab:newGroup("Config", true)
+function Library:apply_settings(window)
+    -- Check if window exists
+    if not window or not window.newTab then
+        warn("[lv.vila] Cannot apply settings: Invalid window")
+        return
+    end
     
-    menuGroup:newLabel({ text = "Menu Key" })
+    -- Create settings tab
+    local settingsTab = window:newTab("Settings")
+    
+    -- Check if tab was created successfully
+    if not settingsTab then
+        warn("[lv.vila] Failed to create settings tab")
+        return
+    end
+    
+    -- Create groups
+    local menuGroup = settingsTab:newGroup("Menu", false)
+    local configGroup = settingsTab:newGroup("Config", true)
+    
+    -- Check if groups were created successfully
+    if not menuGroup or not configGroup then
+        warn("[lv.vila] Failed to create settings groups")
+        return
+    end
+    
+    -- Add menu keybind
     menuGroup:addKeybind("menu_key", {
         default = Enum.KeyCode.End,
         mode = "Toggle",
         state = true,
         ignore = true,
         callback = function(state)
-            if getgenv().window and getgenv().window.gui then
-                getgenv().window.gui.Enabled = state
-                getgenv().window.hidden = not state
+            if window and window.gui then
+                window.gui.Enabled = state
+                window.hidden = not state
             end
         end
     })
     
+    -- Add Copy JobId button
     menuGroup:newButton({
         text = "Copy JobId",
         callback = function()
+            local setClipboard = safeFunction("setclipboard")
             if setClipboard then
                 setClipboard("Roblox.GameLauncher.joinGameInstance(" .. tostring(game.PlaceId) .. ", \"" .. tostring(game.JobId) .. "\")")
             end
         end
     })
     
+    -- Add Unload button
     menuGroup:newButton({
         text = "Unload",
         callback = function()
-            if getgenv().window then
-                getgenv().window:destroy()
+            if window and window.destroy then
+                window:destroy()
             end
             getgenv().library = nil
             getgenv().window = nil
         end
     })
     
-    configGroup:newTextbox("config_name", { text = "Config Name", default = "", ignore = true })
+    -- Add config name textbox
+    configGroup:newTextbox("config_name", { 
+        text = "Config Name", 
+        default = "", 
+        ignore = true 
+    })
     
+    -- Add Save button
     configGroup:newButton({
         text = "Save",
         callback = function()
-            if not isFolder then return end
-            local configName = "lv.vila/" .. tostring(getgenv().window.flags["config_name"]) .. ".json"
+            local isFolder = safeFunction("isfolder")
+            local makeFolder = safeFunction("makefolder")
+            local writeFile = safeFunction("writefile")
+            
+            if not isFolder or not writeFile then 
+                warn("[lv.vila] File operations not supported")
+                return 
+            end
+            
+            local configName = "lv.vila/" .. tostring(window.flags["config_name"]) .. ".json"
             if not isFolder("lv.vila") and makeFolder then
                 makeFolder("lv.vila")
             end
             
             local fixedConfig = {}
-            for key, value in pairs(getgenv().window.flags) do
-                if not getgenv().window.ignore[key] then
-                    if typeof(value) == "table" and value.color then
+            for key, value in pairs(window.flags) do
+                if not window.ignore[key] then
+                    if type(value) == "table" and value.color then
                         fixedConfig[key] = {
                             color = value.color:ToHex(),
                             transparency = value.transparency
@@ -1910,32 +1949,42 @@ function Library:apply_settings(tab)
                 end
             end
             
-            if writeFile then
-                writeFile(configName, HttpService:JSONEncode(fixedConfig))
-            end
+            writeFile(configName, HttpService:JSONEncode(fixedConfig))
         end
     })
     
+    -- Add Load button
     configGroup:newButton({
         text = "Load",
         callback = function()
-            if not isFolder then return end
-            local configName = "lv.vila/" .. tostring(getgenv().window.flags["config_name"]) .. ".json"
-            if not isFolder("lv.vila") and makeFolder then
-                makeFolder("lv.vila")
+            local isFolder = safeFunction("isfolder")
+            local isFile = safeFunction("isfile")
+            local readFile = safeFunction("readfile")
+            
+            if not isFolder or not isFile or not readFile then
+                warn("[lv.vila] File operations not supported")
+                return
             end
             
-            if isFile and isFile(configName) and readFile then
+            local configName = "lv.vila/" .. tostring(window.flags["config_name"]) .. ".json"
+            if not isFolder("lv.vila") then
+                local makeFolder = safeFunction("makefolder")
+                if makeFolder then
+                    makeFolder("lv.vila")
+                end
+            end
+            
+            if isFile(configName) then
                 local config = HttpService:JSONDecode(readFile(configName))
                 for flag, value in pairs(config) do
-                    if getgenv().window.options[flag] and not getgenv().window.ignore[flag] then
-                        if typeof(value) == "table" and value.color then
-                            getgenv().window.options[flag]:set_value({
+                    if window.options[flag] and not window.ignore[flag] then
+                        if type(value) == "table" and value.color then
+                            window.options[flag]:set_value({
                                 color = Color3.fromHex(value.color),
                                 transparency = value.transparency
                             })
                         else
-                            getgenv().window.options[flag]:set_value(value)
+                            window.options[flag]:set_value(value)
                         end
                     end
                 end
