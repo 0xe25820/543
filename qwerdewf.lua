@@ -21,7 +21,6 @@ local getgenv = getgenv or function() return _G end
 
 -- Get protected GUI container with full hiding support
 local function getProtectedGui()
-    -- Try gethui first
     local success, hui = pcall(function()
         return gethui and gethui()
     end)
@@ -29,13 +28,11 @@ local function getProtectedGui()
         return hui
     end
     
-    -- Try CoreGui
     local coreGui = game:GetService("CoreGui")
     if coreGui then
         return coreGui
     end
     
-    -- Fallback to player gui
     return game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
 end
 
@@ -188,17 +185,14 @@ function Window.new(title, position, size)
     self.title = title
     self.hidden = false
     
-    -- Get protected GUI container
     local guiParent = getProtectedGui()
     
-    -- Create GUI with hidden properties
     self.gui = Instance.new("ScreenGui")
     self.gui.Name = generateGUID()
     self.gui.ResetOnSpawn = false
     self.gui.IgnoreGuiInset = true
     self.gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     
-    -- Hide from player list
     local success, protected = pcall(function()
         return syn and syn.protect_gui or protect_gui
     end)
@@ -209,10 +203,8 @@ function Window.new(title, position, size)
     self.gui.Parent = guiParent
     table.insert(self.objects, self.gui)
     
-    -- Make fully hidden initially
     self.gui.Enabled = false
     
-    -- Background
     local bg1 = Instance.new("Frame")
     bg1.BackgroundColor3 = Color3.fromRGB(12, 12, 12)
     bg1.BorderSizePixel = 0
@@ -243,7 +235,6 @@ function Window.new(title, position, size)
     
     self.background = {bg1, bg2, bg3}
     
-    -- Content container
     self.contentContainer = Instance.new("Frame")
     self.contentContainer.BackgroundColor3 = Color3.fromRGB(12, 12, 12)
     self.contentContainer.BorderSizePixel = 0
@@ -254,7 +245,6 @@ function Window.new(title, position, size)
     self.contentContainer.ZIndex = 3
     table.insert(self.objects, self.contentContainer)
     
-    -- Title bar
     local titleBarBg = Instance.new("Frame")
     titleBarBg.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
     titleBarBg.BorderSizePixel = 0
@@ -285,7 +275,6 @@ function Window.new(title, position, size)
     titleLine.ZIndex = 5
     table.insert(self.objects, titleLine)
     
-    -- Tab bar
     local tabBarBg = Instance.new("Frame")
     tabBarBg.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
     tabBarBg.BorderSizePixel = 0
@@ -307,7 +296,6 @@ function Window.new(title, position, size)
     
     self.tabBar = {tabBarBg, tabBarInner}
     
-    -- Dropdown container
     self.dropContainer = Instance.new("ScrollingFrame")
     self.dropContainer.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
     self.dropContainer.BackgroundTransparency = 0
@@ -344,7 +332,6 @@ function Window.new(title, position, size)
     dropLayout.SortOrder = Enum.SortOrder.LayoutOrder
     table.insert(self.objects, dropLayout)
     
-    -- Keybind popup
     self.keybindPopup = Instance.new("Frame")
     self.keybindPopup.BackgroundTransparency = 0
     self.keybindPopup.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
@@ -364,7 +351,6 @@ function Window.new(title, position, size)
     keybindLayout.Parent = self.keybindPopup
     table.insert(self.objects, keybindLayout)
     
-    -- Color picker
     self.colorPicker = Instance.new("Frame")
     self.colorPicker.BackgroundTransparency = 0
     self.colorPicker.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
@@ -377,7 +363,6 @@ function Window.new(title, position, size)
     self.colorPicker.ZIndex = 9999
     table.insert(self.objects, self.colorPicker)
     
-    -- Color wheel
     self.colorWheel = Instance.new("TextButton")
     self.colorWheel.BackgroundTransparency = 0
     self.colorWheel.BackgroundColor3 = Color3.fromRGB(129, 99, 251)
@@ -413,7 +398,6 @@ function Window.new(title, position, size)
     self.colorPickerLocation.ZIndex = 9999
     table.insert(self.objects, self.colorPickerLocation)
     
-    -- Slider group
     local sliderGroup = Instance.new("Frame")
     sliderGroup.BackgroundTransparency = 0
     sliderGroup.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
@@ -425,7 +409,6 @@ function Window.new(title, position, size)
     sliderGroup.ZIndex = 9999
     table.insert(self.objects, sliderGroup)
     
-    -- Hue slider
     self.hueSlider = Instance.new("TextButton")
     self.hueSlider.BackgroundTransparency = 0
     self.hueSlider.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
@@ -450,7 +433,6 @@ function Window.new(title, position, size)
     self.hueSliderLocation.ZIndex = 9999
     table.insert(self.objects, self.hueSliderLocation)
     
-    -- Opacity slider
     self.opacitySlider = Instance.new("TextButton")
     self.opacitySlider.BackgroundTransparency = 0
     self.opacitySlider.BackgroundColor3 = Color3.fromRGB(129, 99, 251)
@@ -476,7 +458,6 @@ function Window.new(title, position, size)
     self.opacitySliderLocation.ZIndex = 10000
     table.insert(self.objects, self.opacitySliderLocation)
     
-    -- Keybind buttons
     self.toggleButton = Instance.new("TextButton")
     self.toggleButton.Text = "Toggle"
     self.toggleButton.TextColor3 = Color3.new(1, 1, 1)
@@ -513,7 +494,6 @@ function Window.new(title, position, size)
     self.hueSliderDown = false
     self.opacitySliderDown = false
     
-    -- Dragging with fixed GetGuiInset
     local function onInputBegan(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 and self.mouseInside then
             self.dragging = true
@@ -560,7 +540,6 @@ function Window.new(title, position, size)
         end
     end))
     
-    -- Color picker events with fixed GetGuiInset
     local function onColorWheelDown()
         self.colorWheelDown = true
     end
@@ -650,7 +629,6 @@ function Window.new(title, position, size)
     table.insert(self.connections, self.opacitySlider.MouseMoved:Connect(onOpacitySliderMove))
     table.insert(self.connections, self.opacitySlider.MouseLeave:Connect(onOpacitySliderLeave))
     
-    -- Keybind buttons
     local function onToggleClick()
         if self.currentKeybind then
             self.flags[self.currentKeybind].mode = "Toggle"
@@ -670,7 +648,6 @@ function Window.new(title, position, size)
     table.insert(self.connections, self.toggleButton.MouseButton1Click:Connect(onToggleClick))
     table.insert(self.connections, self.holdButton.MouseButton1Click:Connect(onHoldClick))
     
-    -- Input handling
     local function onInputBeganGlobal(input)
         if self.currentKeybind then
             if input.UserInputType == Enum.UserInputType.Keyboard then
@@ -755,7 +732,6 @@ function Window.new(title, position, size)
     table.insert(self.connections, UserInputService.InputBegan:Connect(onInputBeganKeybind))
     table.insert(self.connections, UserInputService.InputEnded:Connect(onInputEndedKeybind))
     
-    -- Click outside dropdown
     local function onInputBeganDropdown(input)
         if not self.dropContainer or not self.dropContainer.Visible then return end
         if input.UserInputType ~= Enum.UserInputType.MouseButton1 then return end
@@ -772,7 +748,6 @@ function Window.new(title, position, size)
     
     table.insert(self.connections, UserInputService.InputBegan:Connect(onInputBeganDropdown))
     
-    -- Click outside color picker
     local function onInputBeganColorPicker(input)
         if not self.colorPicker or not self.colorPicker.Visible then return end
         if input.UserInputType ~= Enum.UserInputType.MouseButton1 then return end
@@ -864,79 +839,75 @@ function Window:newTab(name)
     local Tab = {}
     Tab.__index = Tab
     
-function Tab:newGroup(groupName, right)
-    if type(groupName) == "table" then
-        groupName = "Group"
-    end
-    groupName = groupName or ""
-    right = right or false
-    
-    -- Fix: Properly reference the containers
-    local groups = right and self.rightGroups or self.leftGroups
-    local containers = right and self.rightContainers or self.leftContainers
-    
-    -- Ensure containers is an array and has a valid parent
-    if not groups or not containers or #containers == 0 then
-        return nil
-    end
-    
-    -- Get the correct parent container (the scrolling frame)
-    local parentContainer = containers[#containers]
-    if not parentContainer or typeof(parentContainer) ~= "Instance" then
-        return nil
-    end
-    
-    local frame = Instance.new("Frame")
-    frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-    frame.BorderSizePixel = 1
-    frame.BorderColor3 = Color3.fromRGB(30, 30, 30)
-    frame.Size = UDim2.new(1, 0, 0, 0)
-    frame.Position = UDim2.new(0, 0, 0, 0)
-    frame.Parent = parentContainer  -- Fix: Use the instance, not the table
-    frame.AutomaticSize = Enum.AutomaticSize.XY
-    frame.ClipsDescendants = true
-    frame.ZIndex = 11
-    table.insert(self.parent.objects, frame)
-    
-    table.insert(groups, frame)
-    
-    local titleLabel = Instance.new("TextLabel")
-    titleLabel.BackgroundTransparency = 1
-    titleLabel.Size = UDim2.new(1, 0, 0, 18)
-    titleLabel.Position = UDim2.new(0, 0, 0, 0)
-    titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    titleLabel.TextSize = 12
-    titleLabel.Text = groupName
-    titleLabel.Font = Enum.Font.GothamSemibold
-    titleLabel.Parent = frame
-    titleLabel.ZIndex = 12
-    table.insert(self.parent.objects, titleLabel)
-    
-    local container = Instance.new("Frame")
-    container.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-    container.BorderSizePixel = 0
-    container.Size = UDim2.new(1, 0, 0, 0)
-    container.Position = UDim2.new(0, 0, 0, 18)
-    container.Parent = frame
-    container.AutomaticSize = Enum.AutomaticSize.XY
-    container.ClipsDescendants = true
-    container.ZIndex = 12
-    table.insert(self.parent.objects, container)
-    
-    -- Fix: Add container to the correct array
-    table.insert(containers, container)
-    
-    local layout = Instance.new("UIListLayout")
-    layout.FillDirection = Enum.FillDirection.Vertical
-    layout.HorizontalAlignment = Enum.HorizontalAlignment.Left
-    layout.SortOrder = Enum.SortOrder.LayoutOrder
-    layout.VerticalAlignment = Enum.VerticalAlignment.Top
-    layout.Padding = UDim.new(0, 4)
-    layout.Parent = container
-    table.insert(self.parent.objects, layout)
-    
-    local Group = {}
-    Group.__index = Group
+    function Tab:newGroup(groupName, right)
+        if type(groupName) == "table" then
+            groupName = "Group"
+        end
+        groupName = groupName or ""
+        right = right or false
+        
+        local groups = right and self.rightGroups or self.leftGroups
+        local containers = right and self.rightContainers or self.leftContainers
+        
+        if not groups or not containers or #containers == 0 then
+            return nil
+        end
+        
+        local parentContainer = containers[#containers]
+        if not parentContainer or typeof(parentContainer) ~= "Instance" then
+            return nil
+        end
+        
+        local frame = Instance.new("Frame")
+        frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+        frame.BorderSizePixel = 1
+        frame.BorderColor3 = Color3.fromRGB(30, 30, 30)
+        frame.Size = UDim2.new(1, 0, 0, 0)
+        frame.Position = UDim2.new(0, 0, 0, 0)
+        frame.Parent = parentContainer
+        frame.AutomaticSize = Enum.AutomaticSize.XY
+        frame.ClipsDescendants = true
+        frame.ZIndex = 11
+        table.insert(self.parent.objects, frame)
+        
+        table.insert(groups, frame)
+        
+        local titleLabel = Instance.new("TextLabel")
+        titleLabel.BackgroundTransparency = 1
+        titleLabel.Size = UDim2.new(1, 0, 0, 18)
+        titleLabel.Position = UDim2.new(0, 0, 0, 0)
+        titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+        titleLabel.TextSize = 12
+        titleLabel.Text = groupName
+        titleLabel.Font = Enum.Font.GothamSemibold
+        titleLabel.Parent = frame
+        titleLabel.ZIndex = 12
+        table.insert(self.parent.objects, titleLabel)
+        
+        local container = Instance.new("Frame")
+        container.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+        container.BorderSizePixel = 0
+        container.Size = UDim2.new(1, 0, 0, 0)
+        container.Position = UDim2.new(0, 0, 0, 18)
+        container.Parent = frame
+        container.AutomaticSize = Enum.AutomaticSize.XY
+        container.ClipsDescendants = true
+        container.ZIndex = 12
+        table.insert(self.parent.objects, container)
+        
+        table.insert(containers, container)
+        
+        local layout = Instance.new("UIListLayout")
+        layout.FillDirection = Enum.FillDirection.Vertical
+        layout.HorizontalAlignment = Enum.HorizontalAlignment.Left
+        layout.SortOrder = Enum.SortOrder.LayoutOrder
+        layout.VerticalAlignment = Enum.VerticalAlignment.Top
+        layout.Padding = UDim.new(0, 4)
+        layout.Parent = container
+        table.insert(self.parent.objects, layout)
+        
+        local Group = {}
+        Group.__index = Group
         
         function Group:newCheckbox(flag, options)
             options = options or {}
@@ -1708,14 +1679,14 @@ function Tab:newGroup(groupName, right)
             return obj
         end
         
-    setmetatable(Group, Group)
-    
-    local groupObj = setmetatable({}, Group)
-    groupObj.parent = self.parent
-    groupObj.container = container
-    
-    return groupObj
-end
+        setmetatable(Group, Group)
+        
+        local groupObj = setmetatable({}, Group)
+        groupObj.parent = self.parent
+        groupObj.container = container
+        
+        return groupObj
+    end
     
     local layout = Instance.new("UIListLayout")
     layout.FillDirection = Enum.FillDirection.Horizontal
@@ -1803,8 +1774,8 @@ end
         rightScroll = rightScroll,
         leftGroups = {},
         rightGroups = {},
-        leftContainers = {leftScroll},  -- Fix: Start with leftScroll instance
-        rightContainers = {rightScroll} -- Fix: Start with rightScroll instance
+        leftContainers = {leftScroll},
+        rightContainers = {rightScroll}
     }
     
     function tabObj:newGroup(groupName, right)
