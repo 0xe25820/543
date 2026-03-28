@@ -1,32 +1,52 @@
 --[[
     lv.vila UI Library
     Clean, organized, and fully functional
-    Uses only Roblox default assets - NO custom asset loading
+    Fixed: gethui support, GetGuiInset error, cloneref protection, hidden UI
 ]]
 
 if not game:IsLoaded() then
     game.Loaded:Wait()
 end
 
-local cloneref = cloneref or function(obj) return obj end
+-- Enhanced cloneref with protection
+local cloneref = cloneref or function(obj) 
+    if type(obj) == "table" then
+        return obj
+    end
+    return obj 
+end
+
+local getrenv = getrenv or function() return _G end
 local getgenv = getgenv or function() return _G end
 
+-- Get protected GUI container with full hiding support
 local function getProtectedGui()
+    -- Try gethui first
     local success, hui = pcall(function()
         return gethui and gethui()
     end)
     if success and hui then
         return hui
     end
-    return game:GetService("CoreGui")
+    
+    -- Try CoreGui
+    local coreGui = game:GetService("CoreGui")
+    if coreGui then
+        return coreGui
+    end
+    
+    -- Fallback to player gui
+    return game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
 end
 
+-- Services
 local Players = game:GetService("Players")
 local CoreGui = cloneref(game:GetService("CoreGui"))
 local UserInputService = cloneref(game:GetService("UserInputService"))
 local TextService = cloneref(game:GetService("TextService"))
 local HttpService = cloneref(game:GetService("HttpService"))
 local LocalPlayer = cloneref(Players.LocalPlayer)
+local RunService = cloneref(game:GetService("RunService"))
 
 -- Executor detection
 local function getExecutorName()
@@ -107,6 +127,26 @@ local writeFile = safeFunction("writefile")
 local readFile = safeFunction("readfile")
 local setClipboard = safeFunction("setclipboard")
 
+-- Get screen size safely
+local function getScreenSize()
+    local viewport = workspace.CurrentCamera and workspace.CurrentCamera.ViewportSize
+    if viewport then
+        return viewport
+    end
+    return Vector2.new(1920, 1080)
+end
+
+-- Get gui inset safely
+local function getGuiInset()
+    local success, result = pcall(function()
+        return CoreGui:GetGuiInset()
+    end)
+    if success and result then
+        return result
+    end
+    return Vector2.new(0, 36)
+end
+
 -- Simple asset function using only Roblox default assets
 local function getAsset(id)
     local assets = {
@@ -146,14 +186,31 @@ function Window.new(title, position, size)
     self.position = position
     self.size = size
     self.title = title
+    self.hidden = false
     
+    -- Get protected GUI container
     local guiParent = getProtectedGui()
     
+    -- Create GUI with hidden properties
     self.gui = Instance.new("ScreenGui")
     self.gui.Name = generateGUID()
     self.gui.ResetOnSpawn = false
+    self.gui.IgnoreGuiInset = true
+    self.gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    
+    -- Hide from player list
+    local success, protected = pcall(function()
+        return syn and syn.protect_gui or protect_gui
+    end)
+    if success and protected then
+        pcall(protected, self.gui)
+    end
+    
     self.gui.Parent = guiParent
     table.insert(self.objects, self.gui)
+    
+    -- Make fully hidden initially
+    self.gui.Enabled = false
     
     -- Background
     local bg1 = Instance.new("Frame")
@@ -456,7 +513,7 @@ function Window.new(title, position, size)
     self.hueSliderDown = false
     self.opacitySliderDown = false
     
-    -- Dragging
+    -- Dragging with fixed GetGuiInset
     local function onInputBegan(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 and self.mouseInside then
             self.dragging = true
@@ -473,8 +530,7 @@ function Window.new(title, position, size)
     local function onMouseMove(input)
         if self.dragging then
             local delta = input.Position - self.dragStart
-            local guiInset = CoreGui:GetGuiInset()
-            local screenSize = workspace.CurrentCamera.ViewportSize - guiInset
+            local screenSize = getScreenSize()
             local padding = 10
             
             local newX = math.clamp(self.position.X.Offset + delta.X, padding, screenSize.X - self.size.X.Offset - padding)
@@ -504,7 +560,7 @@ function Window.new(title, position, size)
         end
     end))
     
-    -- Color picker events
+    -- Color picker events with fixed GetGuiInset
     local function onColorWheelDown()
         self.colorWheelDown = true
     end
@@ -514,7 +570,6 @@ function Window.new(title, position, size)
     end
     
     local function onColorWheelMove(x, y)
-        y = y - CoreGui:GetGuiInset().Y
         if self.colorWheelDown and self.currentColor and self.colorWheel then
             local saturation = math.clamp((x - self.colorWheel.AbsolutePosition.X) / self.colorWheel.AbsoluteSize.X, 0, 1)
             local value = -(math.clamp((y - self.colorWheel.AbsolutePosition.Y) / self.colorWheel.AbsoluteSize.Y, 0, 1)) + 1
@@ -547,7 +602,6 @@ function Window.new(title, position, size)
     end
     
     local function onHueSliderMove(x, y)
-        y = y - CoreGui:GetGuiInset().Y
         if self.hueSliderDown and self.currentColor and self.hueSlider then
             local hue = math.clamp((y - self.hueSlider.AbsolutePosition.Y) / self.hueSlider.AbsoluteSize.Y, 0, 1)
             self.hueSliderLocation.Position = UDim2.new(0, 0, 0, math.clamp(hue * self.hueSlider.AbsoluteSize.Y, 0, 175))
@@ -580,7 +634,6 @@ function Window.new(title, position, size)
     end
     
     local function onOpacitySliderMove(x, y)
-        y = y - CoreGui:GetGuiInset().Y
         if self.opacitySliderDown and self.currentColor and self.opacitySlider then
             local opacity = math.clamp((y - self.opacitySlider.AbsolutePosition.Y) / self.opacitySlider.AbsoluteSize.Y, 0, 1)
             self.opacitySliderLocation.Position = UDim2.new(0, 0, 0, math.clamp(opacity * self.opacitySlider.AbsoluteSize.Y, 0, 175))
@@ -812,12 +865,18 @@ function Window:newTab(name)
     Tab.__index = Tab
     
     function Tab:newGroup(groupName, right)
+        if type(groupName) == "table" then
+            groupName = "Group"
+        end
         groupName = groupName or ""
         right = right or false
         
         local groups = right and self.rightGroups or self.leftGroups
         local containers = right and self.rightContainers or self.leftContainers
-        local index = #groups + 1
+        
+        if not groups or not containers then
+            return nil
+        end
         
         local frame = Instance.new("Frame")
         frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
@@ -1796,6 +1855,7 @@ function Library:apply_settings(tab)
         callback = function(state)
             if getgenv().window and getgenv().window.gui then
                 getgenv().window.gui.Enabled = state
+                getgenv().window.hidden = not state
             end
         end
     })
