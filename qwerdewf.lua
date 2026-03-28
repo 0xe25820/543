@@ -1708,14 +1708,14 @@ function Tab:newGroup(groupName, right)
             return obj
         end
         
-        setmetatable(Group, Group)
-        
-        local groupObj = setmetatable({}, Group)
-        groupObj.parent = self.parent
-        groupObj.container = container
-        
-        return groupObj
-    end
+    setmetatable(Group, Group)
+    
+    local groupObj = setmetatable({}, Group)
+    groupObj.parent = self.parent
+    groupObj.container = container
+    
+    return groupObj
+end
     
     local layout = Instance.new("UIListLayout")
     layout.FillDirection = Enum.FillDirection.Horizontal
@@ -1803,8 +1803,8 @@ function Tab:newGroup(groupName, right)
         rightScroll = rightScroll,
         leftGroups = {},
         rightGroups = {},
-        leftContainers = {leftScroll},
-        rightContainers = {rightScroll}
+        leftContainers = {leftScroll},  -- Fix: Start with leftScroll instance
+        rightContainers = {rightScroll} -- Fix: Start with rightScroll instance
     }
     
     function tabObj:newGroup(groupName, right)
