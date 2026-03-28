@@ -1,7 +1,6 @@
 --[[
     lv.vila UI Library
     Clean, organized, and fully functional
-    Fixed: gethui support, GetGuiInset error, cloneref protection, hidden UI
 ]]
 
 if not game:IsLoaded() then
@@ -19,7 +18,7 @@ end
 local getrenv = getrenv or function() return _G end
 local getgenv = getgenv or function() return _G end
 
--- Get protected GUI container with full hiding support
+-- Get protected GUI container
 local function getProtectedGui()
     local success, hui = pcall(function()
         return gethui and gethui()
@@ -132,7 +131,7 @@ local function getScreenSize()
     return Vector2.new(1920, 1080)
 end
 
--- Simple asset function using only Roblox default assets
+-- Simple asset function
 local function getAsset(id)
     local assets = {
         square = "rbxasset://textures/ui/ScrollBarVerticalBackground.png",
@@ -190,9 +189,9 @@ function Window.new(title, position, size)
     
     self.gui.Parent = guiParent
     table.insert(self.objects, self.gui)
-    
     self.gui.Enabled = false
     
+    -- Background
     local bg1 = Instance.new("Frame")
     bg1.BackgroundColor3 = Color3.fromRGB(12, 12, 12)
     bg1.BorderSizePixel = 0
@@ -223,6 +222,7 @@ function Window.new(title, position, size)
     
     self.background = {bg1, bg2, bg3}
     
+    -- Content container
     self.contentContainer = Instance.new("Frame")
     self.contentContainer.BackgroundColor3 = Color3.fromRGB(12, 12, 12)
     self.contentContainer.BorderSizePixel = 0
@@ -233,6 +233,7 @@ function Window.new(title, position, size)
     self.contentContainer.ZIndex = 3
     table.insert(self.objects, self.contentContainer)
     
+    -- Title bar
     local titleBarBg = Instance.new("Frame")
     titleBarBg.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
     titleBarBg.BorderSizePixel = 0
@@ -263,6 +264,7 @@ function Window.new(title, position, size)
     titleLine.ZIndex = 5
     table.insert(self.objects, titleLine)
     
+    -- Tab bar
     local tabBarBg = Instance.new("Frame")
     tabBarBg.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
     tabBarBg.BorderSizePixel = 0
@@ -284,6 +286,7 @@ function Window.new(title, position, size)
     
     self.tabBar = {tabBarBg, tabBarInner}
     
+    -- Dropdown container
     self.dropContainer = Instance.new("ScrollingFrame")
     self.dropContainer.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
     self.dropContainer.BackgroundTransparency = 0
@@ -320,6 +323,7 @@ function Window.new(title, position, size)
     dropLayout.SortOrder = Enum.SortOrder.LayoutOrder
     table.insert(self.objects, dropLayout)
     
+    -- Keybind popup
     self.keybindPopup = Instance.new("Frame")
     self.keybindPopup.BackgroundTransparency = 0
     self.keybindPopup.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
@@ -339,6 +343,7 @@ function Window.new(title, position, size)
     keybindLayout.Parent = self.keybindPopup
     table.insert(self.objects, keybindLayout)
     
+    -- Color picker
     self.colorPicker = Instance.new("Frame")
     self.colorPicker.BackgroundTransparency = 0
     self.colorPicker.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
@@ -482,6 +487,7 @@ function Window.new(title, position, size)
     self.hueSliderDown = false
     self.opacitySliderDown = false
     
+    -- Dragging
     local function onInputBegan(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 and self.mouseInside then
             self.dragging = true
@@ -528,6 +534,7 @@ function Window.new(title, position, size)
         end
     end))
     
+    -- Color picker events
     local function onColorWheelDown()
         self.colorWheelDown = true
     end
@@ -640,6 +647,7 @@ function Window.new(title, position, size)
     table.insert(self.connections, self.toggleButton.MouseButton1Click:Connect(onToggleClick))
     table.insert(self.connections, self.holdButton.MouseButton1Click:Connect(onHoldClick))
     
+    -- Input handling
     local function onInputBeganGlobal(input)
         if self.currentKeybind then
             if input.UserInputType == Enum.UserInputType.Keyboard then
@@ -836,11 +844,106 @@ function Window:newTab(name)
     
     table.insert(self.connections, button.MouseButton1Click:Connect(onTabClick))
     
-    -- Tab object with newGroup method
-    local Tab = {}
-    Tab.__index = Tab
+    -- Create the tab object with all methods
+    local tabObject = {}
     
-    function Tab:newGroup(groupName, right)
+    -- Store tab data
+    tabObject.parent = self
+    tabObject.leftScroll = nil
+    tabObject.rightScroll = nil
+    tabObject.leftGroups = {}
+    tabObject.rightGroups = {}
+    tabObject.leftContainers = {}
+    tabObject.rightContainers = {}
+    
+    -- Create scrolling frames for this tab
+    local layout = Instance.new("UIListLayout")
+    layout.FillDirection = Enum.FillDirection.Horizontal
+    layout.HorizontalAlignment = Enum.HorizontalAlignment.Left
+    layout.SortOrder = Enum.SortOrder.LayoutOrder
+    layout.VerticalAlignment = Enum.VerticalAlignment.Top
+    layout.Parent = group
+    table.insert(self.objects, layout)
+    
+    local leftScroll = Instance.new("ScrollingFrame")
+    leftScroll.BackgroundColor3 = Color3.fromRGB(12, 12, 12)
+    leftScroll.BorderSizePixel = 0
+    leftScroll.Size = UDim2.new(0.5, 0, 1, 0)
+    leftScroll.Position = UDim2.new(0, 0, 0, 0)
+    leftScroll.Parent = group
+    leftScroll.ClipsDescendants = true
+    leftScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+    leftScroll.BottomImage = "rbxassetid://0"
+    leftScroll.MidImage = getAsset("square")
+    leftScroll.CanvasSize = UDim2.new(0, 0, 1, 0)
+    leftScroll.ScrollBarThickness = 3
+    leftScroll.ScrollBarImageTransparency = 0
+    leftScroll.ScrollBarImageColor3 = Color3.fromRGB(129, 99, 251)
+    leftScroll.TopImage = "rbxassetid://0"
+    leftScroll.VerticalScrollBarInset = Enum.ScrollBarInset.ScrollBar
+    leftScroll.ZIndex = 10
+    table.insert(self.objects, leftScroll)
+    
+    local rightScroll = Instance.new("ScrollingFrame")
+    rightScroll.BackgroundColor3 = Color3.fromRGB(12, 12, 12)
+    rightScroll.BorderSizePixel = 0
+    rightScroll.Size = UDim2.new(0.5, 0, 1, 0)
+    rightScroll.Position = UDim2.new(0.5, 0, 0, 0)
+    rightScroll.Parent = group
+    rightScroll.ClipsDescendants = true
+    rightScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+    rightScroll.BottomImage = "rbxassetid://0"
+    rightScroll.MidImage = getAsset("square")
+    rightScroll.CanvasSize = UDim2.new(0, 0, 1, 0)
+    rightScroll.ScrollBarThickness = 3
+    rightScroll.ScrollBarImageTransparency = 0
+    rightScroll.ScrollBarImageColor3 = Color3.fromRGB(129, 99, 251)
+    rightScroll.TopImage = "rbxassetid://0"
+    rightScroll.VerticalScrollBarInset = Enum.ScrollBarInset.ScrollBar
+    rightScroll.ZIndex = 10
+    table.insert(self.objects, rightScroll)
+    
+    local leftPadding = Instance.new("UIPadding")
+    leftPadding.PaddingBottom = UDim.new(0, 1)
+    leftPadding.PaddingLeft = UDim.new(0, 1)
+    leftPadding.PaddingRight = UDim.new(0, 2)
+    leftPadding.PaddingTop = UDim.new(0, 1)
+    leftPadding.Parent = leftScroll
+    table.insert(self.objects, leftPadding)
+    
+    local rightPadding = Instance.new("UIPadding")
+    rightPadding.PaddingBottom = UDim.new(0, 1)
+    rightPadding.PaddingLeft = UDim.new(0, 2)
+    rightPadding.PaddingRight = UDim.new(0, 1)
+    rightPadding.PaddingTop = UDim.new(0, 1)
+    rightPadding.Parent = rightScroll
+    table.insert(self.objects, rightPadding)
+    
+    local leftSpacer = Instance.new("Frame")
+    leftSpacer.BackgroundColor3 = Color3.fromRGB(12, 12, 12)
+    leftSpacer.BorderSizePixel = 0
+    leftSpacer.Size = UDim2.new(0, 0, 0, 0)
+    leftSpacer.Position = UDim2.new(0, 0, 1, 0)
+    leftSpacer.Parent = leftScroll
+    leftSpacer.LayoutOrder = 9999
+    table.insert(self.objects, leftSpacer)
+    
+    local rightSpacer = Instance.new("Frame")
+    rightSpacer.BackgroundColor3 = Color3.fromRGB(12, 12, 12)
+    rightSpacer.BorderSizePixel = 0
+    rightSpacer.Size = UDim2.new(0, 0, 0, 0)
+    rightSpacer.Position = UDim2.new(0, 0, 1, 0)
+    rightSpacer.Parent = rightScroll
+    rightSpacer.LayoutOrder = 9999
+    table.insert(self.objects, rightSpacer)
+    
+    tabObject.leftScroll = leftScroll
+    tabObject.rightScroll = rightScroll
+    tabObject.leftContainers = {leftScroll}
+    tabObject.rightContainers = {rightScroll}
+    
+    -- Define the newGroup method
+    function tabObject:newGroup(groupName, right)
         if type(groupName) == "table" then
             groupName = "Group"
         end
@@ -907,7 +1010,7 @@ function Window:newTab(name)
         layout.Parent = container
         table.insert(self.parent.objects, layout)
         
-        -- Group object with all UI methods
+        -- Group object
         local Group = {}
         Group.__index = Group
         
@@ -1706,106 +1809,10 @@ function Window:newTab(name)
         return groupObj
     end
     
-    local layout = Instance.new("UIListLayout")
-    layout.FillDirection = Enum.FillDirection.Horizontal
-    layout.HorizontalAlignment = Enum.HorizontalAlignment.Left
-    layout.SortOrder = Enum.SortOrder.LayoutOrder
-    layout.VerticalAlignment = Enum.VerticalAlignment.Top
-    layout.Parent = group
-    table.insert(self.objects, layout)
-    
-    local leftScroll = Instance.new("ScrollingFrame")
-    leftScroll.BackgroundColor3 = Color3.fromRGB(12, 12, 12)
-    leftScroll.BorderSizePixel = 0
-    leftScroll.Size = UDim2.new(0.5, 0, 1, 0)
-    leftScroll.Position = UDim2.new(0, 0, 0, 0)
-    leftScroll.Parent = group
-    leftScroll.ClipsDescendants = true
-    leftScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
-    leftScroll.BottomImage = "rbxassetid://0"
-    leftScroll.MidImage = getAsset("square")
-    leftScroll.CanvasSize = UDim2.new(0, 0, 1, 0)
-    leftScroll.ScrollBarThickness = 3
-    leftScroll.ScrollBarImageTransparency = 0
-    leftScroll.ScrollBarImageColor3 = Color3.fromRGB(129, 99, 251)
-    leftScroll.TopImage = "rbxassetid://0"
-    leftScroll.VerticalScrollBarInset = Enum.ScrollBarInset.ScrollBar
-    leftScroll.ZIndex = 10
-    table.insert(self.objects, leftScroll)
-    
-    local rightScroll = Instance.new("ScrollingFrame")
-    rightScroll.BackgroundColor3 = Color3.fromRGB(12, 12, 12)
-    rightScroll.BorderSizePixel = 0
-    rightScroll.Size = UDim2.new(0.5, 0, 1, 0)
-    rightScroll.Position = UDim2.new(0.5, 0, 0, 0)
-    rightScroll.Parent = group
-    rightScroll.ClipsDescendants = true
-    rightScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
-    rightScroll.BottomImage = "rbxassetid://0"
-    rightScroll.MidImage = getAsset("square")
-    rightScroll.CanvasSize = UDim2.new(0, 0, 1, 0)
-    rightScroll.ScrollBarThickness = 3
-    rightScroll.ScrollBarImageTransparency = 0
-    rightScroll.ScrollBarImageColor3 = Color3.fromRGB(129, 99, 251)
-    rightScroll.TopImage = "rbxassetid://0"
-    rightScroll.VerticalScrollBarInset = Enum.ScrollBarInset.ScrollBar
-    rightScroll.ZIndex = 10
-    table.insert(self.objects, rightScroll)
-    
-    local leftPadding = Instance.new("UIPadding")
-    leftPadding.PaddingBottom = UDim.new(0, 1)
-    leftPadding.PaddingLeft = UDim.new(0, 1)
-    leftPadding.PaddingRight = UDim.new(0, 2)
-    leftPadding.PaddingTop = UDim.new(0, 1)
-    leftPadding.Parent = leftScroll
-    table.insert(self.objects, leftPadding)
-    
-    local rightPadding = Instance.new("UIPadding")
-    rightPadding.PaddingBottom = UDim.new(0, 1)
-    rightPadding.PaddingLeft = UDim.new(0, 2)
-    rightPadding.PaddingRight = UDim.new(0, 1)
-    rightPadding.PaddingTop = UDim.new(0, 1)
-    rightPadding.Parent = rightScroll
-    table.insert(self.objects, rightPadding)
-    
-    local leftSpacer = Instance.new("Frame")
-    leftSpacer.BackgroundColor3 = Color3.fromRGB(12, 12, 12)
-    leftSpacer.BorderSizePixel = 0
-    leftSpacer.Size = UDim2.new(0, 0, 0, 0)
-    leftSpacer.Position = UDim2.new(0, 0, 1, 0)
-    leftSpacer.Parent = leftScroll
-    leftSpacer.LayoutOrder = 9999
-    table.insert(self.objects, leftSpacer)
-    
-    local rightSpacer = Instance.new("Frame")
-    rightSpacer.BackgroundColor3 = Color3.fromRGB(12, 12, 12)
-    rightSpacer.BorderSizePixel = 0
-    rightSpacer.Size = UDim2.new(0, 0, 0, 0)
-    rightSpacer.Position = UDim2.new(0, 0, 1, 0)
-    rightSpacer.Parent = rightScroll
-    rightSpacer.LayoutOrder = 9999
-    table.insert(self.objects, rightSpacer)
-    
-    local tabObj = {
-        parent = self,
-        leftScroll = leftScroll,
-        rightScroll = rightScroll,
-        leftGroups = {},
-        rightGroups = {},
-        leftContainers = {leftScroll},
-        rightContainers = {rightScroll}
-    }
-    
-    function tabObj:newGroup(groupName, right)
-        return Tab.newGroup(self, groupName, right)
-    end
-    
-    setmetatable(tabObj, Tab)
-    
-    self.tabs[name] = tabObj
+    self.tabs[name] = tabObject
     self:updateTabPositions()
     
-    return tabObj
+    return tabObject
 end
 
 function Window:updateTabPositions()
