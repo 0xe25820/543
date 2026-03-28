@@ -187,22 +187,8 @@ local readFile = safeFunction("readfile")
 local getCustomAsset = safeFunction("getcustomasset", getsynasset)
 local setClipboard = safeFunction("setclipboard")
 
--- FIXED: Create cache folder with ABSOLUTE path (matches Workspace)
-local cacheFolder = "lv.vila_cache"
-local function ensureCacheFolder()
-    local success = xpcall(function()
-        if not isFolder(cacheFolder) then
-            makeFolder(cacheFolder)
-        end
-        return true
-    end, function(err)
-        warn("[lv.vila] Failed to create cache folder:", err)
-        return false
-    end)
-    return success
-end
 
-ensureCacheFolder()
+
 
 
 -- Asset management
@@ -235,6 +221,30 @@ local function safeLoadAsset(id)
             assets[id] = getCustomAsset(path)
         end
     end, warn)
+end
+
+-- Load with retries
+for id in pairs(assetData) do
+    safeLoadAsset(id)
+    wait()  -- Small delay for FS
+end
+
+-- FIXED: Safe getAsset - Roblox fallback IDs if nil (no crash)
+local function getAsset(id)
+    local asset = assets[id]
+    if asset then return asset end
+    
+    -- PROVEN Roblox asset fallbacks (no custom needed)
+    local fallbacks = {
+        square = "rbxasset://textures/ui/ScrollBarVerticalBackground.png",
+        checkmark = "rbxassetid://6031097227",  -- Check icon
+        triangle = "rbxassetid://6031094680",  -- Arrow
+        colorpicker = "rbxasset://textures/ui/GuiImagePlaceholder.png",
+        colorpicker_location = "rbxassetid://6031097227",
+        slider_location = "rbxasset://textures/ui/ScrollBarVerticalThumb.png",
+        transparent_pattern = "rbxasset://textures/ui/TransparentBackground.png"
+    }
+    return fallbacks[id] or "rbxasset://textures/ui/GuiImagePlaceholder.png"
 end
 
 -- Load with retries
