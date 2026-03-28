@@ -141,7 +141,7 @@ do
 end
 
 local encodeBase64 = (crypt and crypt.base64 and crypt.base64.encode) or Base64.encode
-local decodeBase64 = (crypt and crypt.base64 and crypt.base64.decode) or Base64.decode
+local decodeBase64 = crypt and crypt.base64 and crypt.base64.decode or function(data) local success, result = pcall(Base64.decode, data); return success and result or nil end
 
 -- Utility functions
 local function tableFind(tbl, value)
@@ -188,7 +188,7 @@ local getCustomAsset = safeFunction("getcustomasset", getsynasset)
 local setClipboard = safeFunction("setclipboard")
 
 -- FIXED: Create cache folder with ABSOLUTE path (matches Workspace)
-local cacheFolder = "c:/Users/arab/Desktop/Workspace/lv.vila_cache"
+local cacheFolder = "lv.vila_cache"
 local function ensureCacheFolder()
     local success = xpcall(function()
         if not isFolder(cacheFolder) then
